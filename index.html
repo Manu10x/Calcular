@@ -99,12 +99,23 @@
             gap: 10px;
         }
 
-        .btn-container a {
+        .btn-container a, .btn-container button {
             text-decoration: none;
         }
 
         #enviarWhatsApp {
             display: inline-block;
+            background-color: #25d366;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        #enviarWhatsApp:hover {
+            background-color: #128c7e;
         }
 
         .form-container {
@@ -205,7 +216,6 @@
             document.getElementById("valor_compra").value = "";
             document.getElementById("cuotas").value = "";
             document.getElementById("fecha_compra").value = "";
-            document.getElementById("interes_mensual").value = "";
             document.getElementById("numero_whatsapp").value = "";
             document.getElementById("enviarWhatsApp").style.display = "none"; // Ocultar el botón de WhatsApp
         }
@@ -215,9 +225,9 @@
             let valorCompra = document.getElementById("valor_compra").value.replace(/\./g, '');
             let cuotas = document.getElementById("cuotas").value;
             let fechaCompraInput = document.getElementById("fecha_compra").value;
-            let interesMensual = document.getElementById("interes_mensual").value / 100; // Convertir el porcentaje a decimal
+            let tasaInteres = document.getElementById("interes").value / 100; // Interés ingresado por el usuario
 
-            if (!valorCompra || !cuotas || !interesMensual) {
+            if (!valorCompra || !cuotas || !tasaInteres) {
                 alert("Por favor, ingrese el valor de la compra, las cuotas y la tasa de interés.");
                 return;
             }
@@ -227,16 +237,15 @@
 
             let fechaCompra = fechaCompraInput ? new Date(fechaCompraInput) : new Date();
 
-            // Calcular la cuota mensual usando la fórmula proporcionada
-            let cuotaMensual = (valorCompra * interesMensual) / (1 - Math.pow(1 + interesMensual, -cuotas));
+            // Calcular cuota mensual usando la fórmula
+            let cuotaMensual = (valorCompra * tasaInteres) / (1 - Math.pow(1 + tasaInteres, -cuotas));
 
-            let resultadoCompra = `
+            let resultadoCompra = ` 
                 <h3>Fecha de la compra:</h3>
                 <table class="result-table">
                     <tr><th>Fecha de la compra</th><td>${fechaCompra.toLocaleDateString()}</td></tr>
                 </table><br><br>
             `;
-
             document.getElementById("resultadoCompra").innerHTML = resultadoCompra;
 
             let resultadoCalculos = `
@@ -244,7 +253,6 @@
                 <table class="result-table">
                     <tr><th>Concepto</th><th>Valor</th></tr>
                     <tr><td>Valor de la compra</td><td>$ ${valorCompra.toLocaleString()}</td></tr>
-                    <tr><td>Interés mensual (${interesMensual * 100}%)</td><td>$ ${(valorCompra * interesMensual).toLocaleString()}</td></tr>
                     <tr><td>Cuota mensual</td><td>$ ${cuotaMensual.toLocaleString()}</td></tr>
                 </table><br><br>
             `;
@@ -254,63 +262,67 @@
                 <table class="result-table">
                     <tr><th>Cuota</th><th>Fecha de pago</th><th>Días restantes</th></tr>`;
 
-            let mensajeWhatsApp = `Fecha de la compra: ${fechaCompra.toLocaleDateString()}\n\n`;
+            let mensajeWhatsApp = `Fecha de la compra: ${fechaCompra.toLocaleDateString()}\n\n`;;
             mensajeWhatsApp += `Resumen del cálculo:\n`;
             mensajeWhatsApp += `Valor de la compra: $ ${valorCompra.toLocaleString()}\n`;
-            mensajeWhatsApp += `Interés mensual (${interesMensual * 100}%): $ ${(valorCompra * interesMensual).toLocaleString()}\n`;
             mensajeWhatsApp += `Cuota mensual: $ ${cuotaMensual.toLocaleString()}\n\n`;
             mensajeWhatsApp += `Fechas de pago:\n`;
 
             for (let i = 1; i <= cuotas; i++) {
                 let fechaPago = new Date(fechaCompra);
-                fechaPago.setMonth(fechaPago.getMonth() + i);
-                let diasRestantes = Math.ceil((fechaPago - new Date()) / (1000 * 3600 * 24)); // Días restantes
+                let mes = fechaPago.getMonth() + 1 + i - 1;
+                if (mes > 12) {
+                    mes = mes - 12;
+                    fechaPago.setFullYear(fechaPago.getFullYear() + 1);
+                }
+                fechaPago.setMonth(mes - 1);
+
+                let diasRestantes = Math.ceil((fechaPago - new Date()) / (1000 * 60 * 60 * 24));
+
                 resultadoFechas += `
                     <tr>
                         <td>${i}</td>
                         <td>${fechaPago.toLocaleDateString()}</td>
-                        <td>${diasRestantes}</td>
+                        <td>${diasRestantes} días</td>
                     </tr>
                 `;
-                mensajeWhatsApp += `Cuota ${i}: ${fechaPago.toLocaleDateString()} - ${diasRestantes} días restantes\n`;
+                mensajeWhatsApp += `Cuota ${i}: ${fechaPago.toLocaleDateString()} (Días restantes: ${diasRestantes})\n`;
             }
 
             resultadoFechas += `</table><br><br>`;
+
+            // Mostrar el botón de WhatsApp
+            let telefonoWhatsApp = document.getElementById("numero_whatsapp").value;
+            if (telefonoWhatsApp) {
+                document.getElementById("enviarWhatsApp").style.display = "inline-block";
+                document.getElementById("enviarWhatsApp").href = `https://wa.me/57${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+            }
+
             document.getElementById("resultadoFechas").innerHTML = resultadoFechas;
-
-            // Enlace para WhatsApp con todos los resultados
-            let mensajeFinal = encodeURIComponent(mensajeWhatsApp);
-            let numeroWhatsApp = document.getElementById("numero_whatsapp").value || "573022850991"; // Usar el número ingresado o el predeterminado
-
-            let enlaceWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeFinal}`;
-            document.getElementById("enviarWhatsApp").href = enlaceWhatsApp;
-            document.getElementById("enviarWhatsApp").style.display = "inline"; // Hacer visible el botón de WhatsApp
         }
     </script>
 </head>
 <body>
     <div class="container">
-        <h2>Calculadora de Pagos con Interés</h2>
+        <h2>Calculadora de Pagos</h2>
         <div class="form-container">
-            <form method="POST" onsubmit="event.preventDefault(); calcularPagos();">
-                <label for="valor_compra">Valor de la compra (en pesos colombianos): </label>
-                <input type="text" name="valor_compra" id="valor_compra" oninput="formatearValor(this)" required><br>
+            <label for="valor_compra">Valor de la compra ($):</label>
+            <input type="text" id="valor_compra" oninput="formatearValor(this)">
 
-                <label for="cuotas">Número de cuotas: </label>
-                <input type="number" name="cuotas" id="cuotas" min="1" required><br>
+            <label for="cuotas">Número de cuotas:</label>
+            <input type="number" id="cuotas" min="1">
 
-                <label for="fecha_compra">Fecha de la compra (opcional, si no se selecciona se usa la fecha actual): </label>
-                <input type="date" name="fecha_compra" id="fecha_compra"><br>
+            <label for="fecha_compra">Fecha de la compra:</label>
+            <input type="date" id="fecha_compra">
 
-                <label for="interes_mensual">Tasa de interés mensual (%): </label>
-                <input type="number" name="interes_mensual" id="interes_mensual" required><br>
+            <label for="interes">Interés mensual (%):</label>
+            <input type="number" id="interes" min="0" step="0.01">
 
-                <label for="numero_whatsapp">Número de WhatsApp para enviar los resultados: </label>
-                <input type="text" name="numero_whatsapp" id="numero_whatsapp" placeholder="Ej: 3022850991"><br><br>
+            <label for="numero_whatsapp">Número de WhatsApp (sin código de país):</label>
+            <input type="number" id="numero_whatsapp" placeholder="Ej. 1234567890">
 
-                <input type="submit" value="Calcular">
-                <button type="button" class="clear-btn" onclick="limpiarResultados()">Limpiar resultados</button>
-            </form>
+            <button type="submit" onclick="calcularPagos()">Calcular</button>
+            <button type="button" class="clear-btn" onclick="limpiarResultados()">Limpiar</button>
         </div>
 
         <div id="resultadoCompra"></div>
@@ -318,14 +330,12 @@
         <div id="resultadoFechas"></div>
 
         <div class="btn-container">
-            <a id="enviarWhatsApp" href="#" target="_blank">
-                <button type="button">Enviar resultados por WhatsApp</button>
-            </a>
+            <a href="#" id="enviarWhatsApp" target="_blank">Enviar WhatsApp</a>
         </div>
     </div>
 
     <div class="footer">
-        <p>Diseñado por <a href="#">Manu10</a></p>
+        <p>Powered by <a href="https://example.com" target="_blank">Tu empresa</a></p>
     </div>
 </body>
 </html>
