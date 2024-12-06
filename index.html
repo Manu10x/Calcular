@@ -60,6 +60,8 @@
             cursor: pointer;
             border-radius: 5px;
             margin: 5px;
+            width: 100%; /* Botones se ajustan al 100% de ancho en pantallas pequeñas */
+            box-sizing: border-box;
         }
 
         input[type="submit"]:hover, button:hover {
@@ -114,6 +116,8 @@
             text-align: center;
             cursor: pointer;
             margin-top: 10px;
+            width: 100%; /* Botón de WhatsApp se ajusta al 100% en pantallas pequeñas */
+            box-sizing: border-box;
         }
 
         #enviarWhatsApp:hover {
@@ -158,9 +162,10 @@
                 font-size: 24px;
             }
 
-            input[type="submit"], button {
-                width: 100%;
+            input[type="submit"], button, #enviarWhatsApp {
                 font-size: 18px;
+                padding: 12px 25px;
+                width: 100%; /* Asegura que todos los botones ocupen el 100% de ancho en pantallas pequeñas */
             }
 
             .result-table {
@@ -188,9 +193,10 @@
                 padding: 10px;
             }
 
-            input[type="submit"], button {
+            input[type="submit"], button, #enviarWhatsApp {
                 font-size: 16px;
                 padding: 12px 25px;
+                width: 100%; /* Asegura que los botones se ajusten bien en pantallas más pequeñas */
             }
 
             .result-table {
@@ -268,19 +274,11 @@
             mensajeWhatsApp += `Resumen del cálculo:\n`;
             mensajeWhatsApp += `Valor de la compra: $ ${valorCompra.toLocaleString()}\n`;
             mensajeWhatsApp += `Cuota mensual: $ ${cuotaMensual.toLocaleString()}\n\n`;
-            mensajeWhatsApp += `Fechas de pago:\n`;
 
             for (let i = 1; i <= cuotas; i++) {
                 let fechaPago = new Date(fechaCompra);
-                let mes = fechaPago.getMonth() + 1 + i - 1;
-                if (mes > 12) {
-                    mes = mes - 12;
-                    fechaPago.setFullYear(fechaPago.getFullYear() + 1);
-                }
-                fechaPago.setMonth(mes - 1);
-
-                let diasRestantes = Math.ceil((fechaPago - new Date()) / (1000 * 60 * 60 * 24));
-
+                fechaPago.setMonth(fechaPago.getMonth() + i);
+                let diasRestantes = Math.floor((fechaPago - new Date()) / (1000 * 60 * 60 * 24));
                 resultadoFechas += `
                     <tr>
                         <td>${i}</td>
