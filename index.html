@@ -205,6 +205,7 @@
             document.getElementById("valor_compra").value = "";
             document.getElementById("cuotas").value = "";
             document.getElementById("fecha_compra").value = "";
+            document.getElementById("interes_mensual").value = "";
             document.getElementById("numero_whatsapp").value = "";
             document.getElementById("enviarWhatsApp").style.display = "none"; // Ocultar el botón de WhatsApp
         }
@@ -214,9 +215,10 @@
             let valorCompra = document.getElementById("valor_compra").value.replace(/\./g, '');
             let cuotas = document.getElementById("cuotas").value;
             let fechaCompraInput = document.getElementById("fecha_compra").value;
+            let interesMensual = document.getElementById("interes_mensual").value / 100; // Convertir el porcentaje a decimal
 
-            if (!valorCompra || !cuotas) {
-                alert("Por favor, ingrese el valor de la compra y las cuotas.");
+            if (!valorCompra || !cuotas || !interesMensual) {
+                alert("Por favor, ingrese el valor de la compra, las cuotas y la tasa de interés.");
                 return;
             }
 
@@ -225,10 +227,8 @@
 
             let fechaCompra = fechaCompraInput ? new Date(fechaCompraInput) : new Date();
 
-            let interes = 2;
-            let interesTotal = valorCompra * (interes / 100);
-            let montoTotal = valorCompra + interesTotal;
-            let cuotaMensual = montoTotal / cuotas;
+            // Calcular la cuota mensual usando la fórmula proporcionada
+            let cuotaMensual = (valorCompra * interesMensual) / (1 - Math.pow(1 + interesMensual, -cuotas));
 
             let resultadoCompra = `
                 <h3>Fecha de la compra:</h3>
@@ -244,8 +244,7 @@
                 <table class="result-table">
                     <tr><th>Concepto</th><th>Valor</th></tr>
                     <tr><td>Valor de la compra</td><td>$ ${valorCompra.toLocaleString()}</td></tr>
-                    <tr><td>Interés (2%)</td><td>$ ${interesTotal.toLocaleString()}</td></tr>
-                    <tr><td>Monto total a pagar</td><td>$ ${montoTotal.toLocaleString()}</td></tr>
+                    <tr><td>Interés mensual (${interesMensual * 100}%)</td><td>$ ${(valorCompra * interesMensual).toLocaleString()}</td></tr>
                     <tr><td>Cuota mensual</td><td>$ ${cuotaMensual.toLocaleString()}</td></tr>
                 </table><br><br>
             `;
@@ -258,29 +257,21 @@
             let mensajeWhatsApp = `Fecha de la compra: ${fechaCompra.toLocaleDateString()}\n\n`;
             mensajeWhatsApp += `Resumen del cálculo:\n`;
             mensajeWhatsApp += `Valor de la compra: $ ${valorCompra.toLocaleString()}\n`;
-            mensajeWhatsApp += `Interés (2%): $ ${interesTotal.toLocaleString()}\n`;
-            mensajeWhatsApp += `Monto total a pagar: $ ${montoTotal.toLocaleString()}\n`;
+            mensajeWhatsApp += `Interés mensual (${interesMensual * 100}%): $ ${(valorCompra * interesMensual).toLocaleString()}\n`;
             mensajeWhatsApp += `Cuota mensual: $ ${cuotaMensual.toLocaleString()}\n\n`;
             mensajeWhatsApp += `Fechas de pago:\n`;
 
             for (let i = 1; i <= cuotas; i++) {
                 let fechaPago = new Date(fechaCompra);
-                let mes = fechaPago.getMonth() + 1 + i - 1;
-                if (mes > 12) {
-                    mes = mes - 12;
-                    fechaPago.setFullYear(fechaPago.getFullYear() + 1);
-                }
-                fechaPago.setMonth(mes - 1);
-                fechaPago.setDate(15);
-
-                let diasRestantes = Math.max(0, Math.ceil((fechaPago - new Date()) / (1000 * 3600 * 24)));
-
+                fechaPago.setMonth(fechaPago.getMonth() + i);
+                let diasRestantes = Math.ceil((fechaPago - new Date()) / (1000 * 3600 * 24)); // Días restantes
                 resultadoFechas += `
                     <tr>
-                        <td>Cuota ${i}</td>
+                        <td>${i}</td>
                         <td>${fechaPago.toLocaleDateString()}</td>
-                        <td>${diasRestantes} días</td>
-                    </tr>`;
+                        <td>${diasRestantes}</td>
+                    </tr>
+                `;
                 mensajeWhatsApp += `Cuota ${i}: ${fechaPago.toLocaleDateString()} - ${diasRestantes} días restantes\n`;
             }
 
@@ -311,8 +302,11 @@
                 <label for="fecha_compra">Fecha de la compra (opcional, si no se selecciona se usa la fecha actual): </label>
                 <input type="date" name="fecha_compra" id="fecha_compra"><br>
 
+                <label for="interes_mensual">Tasa de interés mensual (%): </label>
+                <input type="number" name="interes_mensual" id="interes_mensual" required><br>
+
                 <label for="numero_whatsapp">Número de WhatsApp para enviar los resultados: </label>
-                <input type="text" name="numero_whatsapp" id="numero_whatsapp" placeholder="Ej: 302XXXXXXX"><br><br>
+                <input type="text" name="numero_whatsapp" id="numero_whatsapp" placeholder="Ej: 3022850991"><br><br>
 
                 <input type="submit" value="Calcular">
                 <button type="button" class="clear-btn" onclick="limpiarResultados()">Limpiar resultados</button>
